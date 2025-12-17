@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>電流急急棒 - 修正版</title>
+  <title>電流急急棒</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -21,7 +21,6 @@
       margin: 30px auto;
       background-color: white;
       border: 3px solid #333;
-      overflow: hidden; /* 防止滑鼠跑出 */
     }
 
     .wall {
@@ -58,8 +57,8 @@
 </head>
 <body>
 
-  <h1>⚡ 電流急急棒 - 修正版</h1>
-  <p>請用滑鼠從起點走到終點，不能碰到牆壁或外框</p>
+  <h1>⚡ 電流急急棒</h1>
+  <p>請用滑鼠從起點走到終點，不能碰到牆壁</p>
 
   <div id="game">
     <div id="start">起點</div>
@@ -80,43 +79,25 @@
     const start = document.getElementById("start");
     const end = document.getElementById("end");
     const walls = document.querySelectorAll(".wall");
-    const game = document.getElementById("game");
 
     start.onmouseenter = function () {
       playing = true;
-      message.textContent = "遊戲開始！小心不要碰到牆壁或邊框";
+      message.textContent = "遊戲開始！小心不要碰到牆壁";
     };
 
-    function fail() {
-      playing = false;
-      message.textContent = "💥 失敗！請回到起點重新開始";
-    }
-
-    // 牆壁碰撞
     walls.forEach(wall => {
       wall.onmouseenter = function () {
-        if (playing) fail();
+        if (playing) {
+          playing = false;
+          message.textContent = "💥 失敗！請回到起點重新開始";
+        }
       };
     });
 
-    // 終點判定
     end.onmouseenter = function () {
       if (playing) {
         playing = false;
         message.textContent = "🎉 成功！你完成了電流急急棒";
-      }
-    };
-
-    // 外框判定
-    game.onmousemove = function(e) {
-      if (!playing) return;
-
-      const rect = game.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
-      if (x <= 0 || y <= 0 || x >= rect.width || y >= rect.height) {
-        fail();
       }
     };
   </script>
