@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>電流急急棒</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f2f2f2;
+      text-align: center;
+    }
+
+    h1 {
+      margin-top: 20px;
+    }
+
+    #game {
+      position: relative;
+      width: 600px;
+      height: 300px;
+      margin: 30px auto;
+      background-color: white;
+      border: 3px solid #333;
+    }
+
+    .wall {
+      position: absolute;
+      background-color: #333;
+    }
+
+    #start, #end {
+      position: absolute;
+      width: 80px;
+      height: 40px;
+      line-height: 40px;
+      color: white;
+      font-weight: bold;
+    }
+
+    #start {
+      background-color: green;
+      left: 10px;
+      top: 130px;
+    }
+
+    #end {
+      background-color: red;
+      right: 10px;
+      top: 130px;
+    }
+
+    #message {
+      font-size: 20px;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>⚡ 電流急急棒</h1>
+  <p>請用滑鼠從起點走到終點，不能碰到牆壁</p>
+
+  <div id="game">
+    <div id="start">起點</div>
+    <div id="end">終點</div>
+
+    <!-- 牆壁 -->
+    <div class="wall" style="left:120px; top:0; width:20px; height:200px;"></div>
+    <div class="wall" style="left:220px; top:100px; width:20px; height:200px;"></div>
+    <div class="wall" style="left:320px; top:0; width:20px; height:200px;"></div>
+    <div class="wall" style="left:420px; top:100px; width:20px; height:200px;"></div>
+  </div>
+
+  <div id="message">請從起點開始</div>
+
+  <script>
+    let playing = false;
+    const message = document.getElementById("message");
+    const start = document.getElementById("start");
+    const end = document.getElementById("end");
+    const walls = document.querySelectorAll(".wall");
+
+    start.onmouseenter = function () {
+      playing = true;
+      message.textContent = "遊戲開始！小心不要碰到牆壁";
+    };
+
+    walls.forEach(wall => {
+      wall.onmouseenter = function () {
+        if (playing) {
+          playing = false;
+          message.textContent = "💥 失敗！請回到起點重新開始";
+        }
+      };
+    });
+
+    end.onmouseenter = function () {
+      if (playing) {
+        playing = false;
+        message.textContent = "🎉 成功！你完成了電流急急棒";
+      }
+    };
+  </script>
+
+</body>
+</html>
