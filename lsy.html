@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 猜畫小遊戲</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>
+    <style>
+        body { font-family: 'Arial', sans-serif; text-align: center; background: #f0f2f5; margin-top: 50px; }
+        #canvas-container { border: 5px solid #333; display: inline-block; border-radius: 10px; background: white; cursor: crosshair; }
+        .controls { margin-top: 20px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
+        button:hover { background: #0056b3; }
+        #res-box { font-size: 24px; color: #333; margin-top: 15px; }
+        #target { font-weight: bold; color: #e91e63; }
+    </style>
+</head>
+<body>
+
+    <h1>你畫 AI 猜</h1>
+    <div id="res-box">題目：<span id="target">載入中...</span></div>
+    <div id="canvas-container"></div>
+    
+    <div class="controls">
+        <button onclick="clearCanvas()">清除畫板</button>
+        <button onclick="nextQuestion()">下一個題目</button>
+    </div>
+
+    <div id="res-box">AI 覺得你畫的是：<span id="label">...</span> (<span id="confidence">0</span>%)</div>
+
+    <script>
+        let classifier;
+        let canvas;
+        let labelSpan;
+        let confSpan;
+        let targetSpan;
+        
+        // 題庫 (DoodleNet 支援的部分單字)
+        const topics = ['cat', 'dog', 'flower', 'tree', 'car', 'apple', 'sun', 'moon', 'house', 'fish', 'umbrella', 'bird'];
+        let currentTopic = '';
+
+        function setup() {
+            // 建立畫布並放入容器
+            canvas = createCanvas(400, 400);
+            canvas.parent('canvas-container');
+            background(255);
+            
+            // 初始化 AI 模型 (DoodleNet)
+            classifier = ml5.imageClassifier('DoodleNet', modelReady);
+            
+            labelSpan = document.getElementById('label');
+            confSpan = document.getElementById('confidence');
+            targetSpan = document.getElementById('target');
+            
+            nextQuestion();
+        }
+
+        function modelReady() {
+            console.log('Model Loaded!');
+            classifyCanvas();
+        }
+
+        function nextQuestion() {
+            currentTopic = topics[Math.floor(Math.random() * topics.length)];
+            targetSpan.innerText = currentTopic;
+            clearCanvas();
+        }
+
+        function clearCanvas() {
+            background(255);
+        }
+
+        function draw() {
+            if (mouseIsPressed) {
+                strokeWeight(12); // 線條粗細
+                line(pmouseX, pmouseY, mouseX, mouseY);
+            }
+        }
+
+        // 當滑鼠放開時，讓 AI 猜測
+        function mouseReleased() {
+            classifyCanvas();
+        }
+
+        function classifyCanvas() {
+            classifier.classify(canvas, gotResult);
+        }
+
+        function gotResult(error, results) {
+            if (error) {
+                console.error(error);
+                return;
+            }
+            // 顯示最高機率的結果
+            labelSpan.innerText = results[0].label;
+            confSpan.innerText = nf(results[0].confidence * 100, 0, 2);
+            
+            // 如果猜對了，變顏色提示
+            if (results[0].label === currentTopic) {
+                labelSpan.style.color = 'green';
+            } else {
+                labelSpan.style.color = '#333';
+            }
+        }
+    </script>
+</body>
+</html>
