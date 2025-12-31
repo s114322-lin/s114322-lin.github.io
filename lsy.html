@@ -3,67 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 猜畫小遊戲</title>
+    <title>AI 猜畫評分版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>
     <style>
-        body { font-family: 'Arial', sans-serif; text-align: center; background: #f0f2f5; margin-top: 50px; }
-        #canvas-container { border: 5px solid #333; display: inline-block; border-radius: 10px; background: white; cursor: crosshair; }
-        .controls { margin-top: 20px; }
-        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
-        button:hover { background: #0056b3; }
-        #res-box { font-size: 24px; color: #333; margin-top: 15px; }
-        #target { font-weight: bold; color: #e91e63; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #fdfdfd; color: #333; }
+        #canvas-container { border: 8px solid #FFD700; display: inline-block; border-radius: 20px; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin: 20px; }
+        .controls { margin-bottom: 20px; }
+        button { padding: 12px 25px; font-size: 18px; cursor: pointer; border: none; border-radius: 50px; margin: 5px; transition: 0.3s; }
+        .btn-clear { background: #eee; color: #333; }
+        .btn-next { background: #007bff; color: white; }
+        .btn-score { background: #28a745; color: white; font-weight: bold; }
+        button:hover { opacity: 0.8; transform: scale(1.05); }
+        #target-box { font-size: 28px; margin: 20px; color: #e91e63; }
+        #score-display { font-size: 24px; min-height: 40px; margin-top: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <h1>你畫 AI 猜</h1>
-    <div id="res-box">題目：<span id="target">載入中...</span></div>
+    <h1>🎨 AI 繪畫評分挑戰</h1>
+    
+    <div id="target-box">請畫出：<span id="target-word">載入中...</span></div>
+
     <div id="canvas-container"></div>
     
     <div class="controls">
-        <button onclick="clearCanvas()">清除畫板</button>
-        <button onclick="nextQuestion()">下一個題目</button>
+        <button class="btn-clear" onclick="clearCanvas()">清空</button>
+        <button class="btn-next" onclick="nextQuestion()">換一題</button>
+        <button class="btn-score" onclick="getScore()">畫好了，請評分！</button>
     </div>
 
-    <div id="res-box">AI 覺得你畫的是：<span id="label">...</span> (<span id="confidence">0</span>%)</div>
+    <div id="score-display">AI 準備好挑戰了...</div>
 
     <script>
         let classifier;
         let canvas;
-        let labelSpan;
-        let confSpan;
-        let targetSpan;
-        
-        // 題庫 (DoodleNet 支援的部分單字)
+        let targetWord = "";
         const topics = ['cat', 'dog', 'flower', 'tree', 'car', 'apple', 'sun', 'moon', 'house', 'fish', 'umbrella', 'bird'];
-        let currentTopic = '';
 
         function setup() {
-            // 建立畫布並放入容器
             canvas = createCanvas(400, 400);
             canvas.parent('canvas-container');
             background(255);
-            
-            // 初始化 AI 模型 (DoodleNet)
-            classifier = ml5.imageClassifier('DoodleNet', modelReady);
-            
-            labelSpan = document.getElementById('label');
-            confSpan = document.getElementById('confidence');
-            targetSpan = document.getElementById('target');
-            
+            classifier = ml5.imageClassifier('DoodleNet', () => console.log('AI Ready!'));
             nextQuestion();
         }
 
-        function modelReady() {
-            console.log('Model Loaded!');
-            classifyCanvas();
-        }
-
         function nextQuestion() {
-            currentTopic = topics[Math.floor(Math.random() * topics.length)];
-            targetSpan.innerText = currentTopic;
+            targetWord = topics[Math.floor(Math.random() * topics.length)];
+            document.getElementById('target-word').innerText = targetWord;
+            document.getElementById('score-display').innerText = "AI 正在等你的作品...";
+            document.getElementById('score-display').style.color = "#333";
             clearCanvas();
         }
 
@@ -73,35 +63,32 @@
 
         function draw() {
             if (mouseIsPressed) {
-                strokeWeight(12); // 線條粗細
+                strokeWeight(12);
                 line(pmouseX, pmouseY, mouseX, mouseY);
             }
         }
 
-        // 當滑鼠放開時，讓 AI 猜測
-        function mouseReleased() {
-            classifyCanvas();
-        }
+        // 核心評分邏輯
+        function getScore() {
+            document.getElementById('score-display').innerText = "AI 正在辨識中...";
+            classifier.classify(canvas, (err, results) => {
+                if (err) return;
+                
+                // 檢查 AI 猜的前三個結果中是否有正確答案
+                let match = results.find(r => r.label === targetWord);
+                let scoreBox = document.getElementById('score-display');
 
-        function classifyCanvas() {
-            classifier.classify(canvas, gotResult);
-        }
-
-        function gotResult(error, results) {
-            if (error) {
-                console.error(error);
-                return;
-            }
-            // 顯示最高機率的結果
-            labelSpan.innerText = results[0].label;
-            confSpan.innerText = nf(results[0].confidence * 100, 0, 2);
-            
-            // 如果猜對了，變顏色提示
-            if (results[0].label === currentTopic) {
-                labelSpan.style.color = 'green';
-            } else {
-                labelSpan.style.color = '#333';
-            }
+                if (match) {
+                    let confidence = (match.confidence * 100).toFixed(1);
+                    scoreBox.innerText = `✅ 相似度：${confidence}%！畫得真像！`;
+                    scoreBox.style.color = "green";
+                } else {
+                    // 如果沒猜中，顯示 AI 覺得最像什麼
+                    let topGuess = results[0].label;
+                    scoreBox.innerText = `❌ AI 覺得這比較像 [${topGuess}]... 再試試看！`;
+                    scoreBox.style.color = "red";
+                }
+            });
         }
     </script>
 </body>
